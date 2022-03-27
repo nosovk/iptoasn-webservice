@@ -1,7 +1,11 @@
 #[macro_use]
+extern crate clap;
+#[macro_use]
 extern crate horrorshow;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate router;
 
 mod asns;
 mod webservice;
@@ -9,12 +13,31 @@ mod webservice;
 use crate::asns::Asns;
 use crate::webservice::WebService;
 use clap::{Arg, Command};
+use std::error::Error;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
     env_logger::init();
+use clap::Arg;
+use vercel_lambda::{error::VercelError, Handler, IntoResponse, lambda, Request, Response};
+use vercel_lambda::http::StatusCode;
+
+use crate::asns::*;
+use crate::vercel::VercelAsnHandler;
+use crate::webservice::*;
+
+mod asns;
+mod webservice;
+mod vercel;
+
+fn get_asns(db_url: &str) -> Result<ASNs, &'static str> {
+    info!("Retrieving ASNs");
+    let asns = ASNs::new(db_url);
+    info!("ASNs loaded");
+    asns
+}
 
     let matches = Command::new("iptoasn-webservice")
         .version("0.2.5")
@@ -59,6 +82,21 @@ async fn main() {
             return;
         }
     };
+fn update_asns(asns_arc: &Arc<RwLock<Arc<ASNs>>>, db_url: &str) {
+    let asns = match get_asns(db_url) {
+        Ok(asns) => asns,
+        Err(e) => {
+            warn!("{}", e);
+            return;
+        }
+    };
+    *asns_arc.write().unwrap() = Arc::new(asns);
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    info!("Setting up db update");
+    let db_url = "https://iptoasn.com/data/ip2asn-combined.tsv.gz";
+    let asns = get_asns(&db_url).expect("Unable to load the initial database");
     let asns_arc = Arc::new(RwLock::new(Arc::new(asns)));
 
     // Only start the refresh task if refresh_delay > 0
@@ -103,4 +141,12 @@ async fn update_asns(asns_arc: &Arc<RwLock<Arc<Asns>>>, db_url: &str) {
     let mut asns_arc_w = asns_arc.write().unwrap();
     *asns_arc_w = asns_arc_new;
     info!("ASN database successfully updated");
+    let asns_arc_copy = asns_arc.clone();
+    thread::spawn(move || loop {
+        thread::sleep(Duration::from_secs(3600));
+        update_asns(&asns_arc_copy, &db_url);
+    });
+
+    info!("Starting the lambda");
+    Ok(lambda!(VercelAsnHandler { asns_arc }))
 }
