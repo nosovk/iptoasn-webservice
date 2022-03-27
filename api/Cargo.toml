@@ -21,6 +21,11 @@ router = "0.6"
 serde_json = "1.0"
 unicase = "1"
 time = "0.1"
+vercel_lambda = "*"
+
+[lib]
+name = "iptoasn"
+path = "main.rs"
 
 [features]
 default = []
