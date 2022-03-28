@@ -2,67 +2,27 @@
 
 # iptoasn-webservice
 
-A high-performance HTTP API server that maps IP addresses to Autonomous System (AS) information including ASN, country code, and organization description.
+Webservice to map IP addresses to AS information.
 
-This is the source code of the (previously) public API from [iptoasn.com](https://iptoasn.com).
+This is the source code of the public API from [iptoasn.com](https://iptoasn.com).
 
-## Features
+Requires [rust](https://www.rust-lang.org/).
 
-- **Fast IP to ASN lookups** using efficient binary search over sorted IP ranges
-- **Automatic database updates** with configurable refresh intervals
-- **Robust data loading** with fallback mechanisms for offline operation
-- **Multiple output formats** (JSON and HTML)
-- **Built-in caching** for downloaded databases
-- **Production-ready** with proper HTTP headers and error handling
-
-## Requirements
-
-- [Rust](https://www.rust-lang.org/) (latest stable)
-
-## Installation & Usage
-
-### Build from source
+# Usage:
 
 ```sh
-cargo build --release
-```
-
-### Run the server
-
-```sh
-# Default configuration (listen on 127.0.0.1:53661, refresh every 60 minutes)
-./target/release/iptoasn-webservice
-
-# Custom configuration
-./target/release/iptoasn-webservice \
-  --listen 0.0.0.0:8080 \
-  --dburl https://iptoasn.com/data/ip2asn-combined.tsv.gz \
-  --refresh 120
-```
-
-### Command line options
-
-- `--listen` (`-l`): Address and port to bind to (default: `127.0.0.1:53661`)
-- `--dburl` (`-u`): Database URL to download from (default: `https://iptoasn.com/data/ip2asn-combined.tsv.gz`)
-- `--refresh` (`-r`): Database refresh interval in minutes, 0 to disable (default: `60`)
-
-## API Usage
-
-### JSON Response
-
-```sh
-curl -H'Accept: application/json' http://localhost:53661/v1/as/ip/8.8.8.8
+$ curl -H'Accept: application/json' https://iptoasn-webservice.vercel.app/api/<ip address>
 ```
 
 ```json
 {
   "announced": true,
   "as_country_code": "US",
-  "as_description": "GOOGLE - Google LLC",
-  "as_number": 15169,
-  "first_ip": "8.8.8.0",
-  "ip": "8.8.8.8",
-  "last_ip": "8.8.8.255"
+  "as_description": "LEVEL3 - Level 3 Communications, Inc.",
+  "as_number": 3356,
+  "first_ip": "4.0.0.0",
+  "ip": "4.3.2.1",
+  "last_ip": "4.23.87.255"
 }
 ```
 
