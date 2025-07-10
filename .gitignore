@@ -1,6 +1,7 @@
 *~
 Cargo.lock
-/target/
-/cache/
+/api/target/
+/api/cache/
+/.idea
 *.tsv
 *.tsv.gz

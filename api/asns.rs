@@ -6,6 +6,7 @@ use hyper::{Method, StatusCode};
 use hyper_rustls::HttpsConnectorBuilder;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
+use log::{debug, error, info, warn};
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::collections::BTreeSet;
 use std::io::prelude::*;

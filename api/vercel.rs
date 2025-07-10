@@ -3,15 +3,15 @@ use std::net::IpAddr;
 use std::str::FromStr;
 use std::sync::{Arc, RwLock};
 
-use serde_json::{json, Map, Value};
-use vercel_lambda::{Body, Handler, IntoResponse, Request, Response};
+use serde_json::{json, Value};
 use vercel_lambda::error::VercelError;
 use vercel_lambda::http::StatusCode;
+use vercel_lambda::{Body, Handler, Response};
 
-use crate::ASNs;
+use crate::asns::Asns;
 
 pub struct VercelAsnHandler {
-    pub asns_arc: Arc<RwLock<Arc<ASNs>>>,
+    pub asns_arc: Arc<RwLock<Arc<Asns>>>,
 }
 
 impl VercelAsnHandler {
@@ -62,24 +62,23 @@ impl VercelAsnHandler {
 }
 
 impl Handler<Response<String>, Body, VercelError> for VercelAsnHandler {
-    fn run(&mut self, req: vercel_lambda::http::Request<Body>) -> Result<Response<String>, VercelError> {
+    fn run(
+        &mut self,
+        req: vercel_lambda::http::Request<Body>,
+    ) -> Result<Response<String>, VercelError> {
         let uri = req.uri().path();
         let ip = uri.rsplit('/').next().unwrap_or("");
         match self.ip_lookup(ip) {
-            Ok(map) => {
-                Ok(Response::builder()
-                    .status(StatusCode::OK)
-                    .header("Content-Type", "application/json")
-                    .body(serde_json::to_string(&map).unwrap())
-                    .expect("Internal Server Error"))
-            }
-            Err(e) => {
-                Ok(Response::builder()
-                    .status(StatusCode::BAD_REQUEST)
-                    .header("Content-Type", "application/json")
-                    .body(json!({ "error": format!("{}", e) }).to_string())
-                    .expect("Internal Server Error"))
-            }
+            Ok(map) => Ok(Response::builder()
+                .status(StatusCode::OK)
+                .header("Content-Type", "application/json")
+                .body(serde_json::to_string(&map).unwrap())
+                .expect("Internal Server Error")),
+            Err(e) => Ok(Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .header("Content-Type", "application/json")
+                .body(json!({ "error": format!("{}", e) }).to_string())
+                .expect("Internal Server Error")),
         }
     }
 }
